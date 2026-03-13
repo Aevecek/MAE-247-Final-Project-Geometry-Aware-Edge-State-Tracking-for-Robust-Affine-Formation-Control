@@ -1,17 +1,18 @@
 % sim_est_rkf_garkf.m
 clear; clc;
 
+% simulation parameters
 dt = 0.01;
 t_max = 30;
 K_max = floor(t_max / dt);
-MC_RUN = 10; % Monte Carlo runs
+MC_RUN = 10; % Monte Carlo iterations
 
 % Create directory for results
 if ~exist('results', 'dir')
     mkdir('results');
 end
 
-% Lambdas
+% Lambdas across different reliabilities
 sense_mat_1  = binornd(1, 1.0, [10, 10, K_max]);
 sense_mat_04 = binornd(1, 0.4, [10, 10, K_max]);
 sense_mat_02 = binornd(1, 0.2, [10, 10, K_max]);
@@ -25,6 +26,7 @@ sim_params.shape = 'hexa';
 sim_params.sigma_v = 0.1;
 
 %% RKF
+% standard RKF
 sim_params.RAL = false;
 sim_params.conRAL = false;
 sim_params.GARKF = false;
@@ -49,14 +51,15 @@ for i = 1:length(lambdas)
         rkf_cov_track_mc(:, :, :, j) = fw.cov_track;
     end
     
-    est_error = mean(vecnorm(rkf_est_track_mc - true_edge_track_mc, 2, 1), 3);
-    est_cov = mean(arrayfun(@(k) trace(rkf_cov_track_mc(:,:,k)), 1:K_max), 3);
+    est_error = mean(vecnorm(rkf_est_track_mc - true_edge_track_mc, 2, 1), 3); % scalar mean tracking error
+    est_cov = mean(arrayfun(@(k) trace(rkf_cov_track_mc(:,:,k)), 1:K_max), 3); % trace of covariance matrix
     
     save(sprintf('results/est_error_rkf_lmd_%s.mat', names{i}), 'est_error');
     save(sprintf('results/est_cov_rkf_lmd_%s.mat', names{i}), 'est_cov');
 end
 
 %% GA-RKF
+% for GA-RKF
 sim_params.RAL = true;
 sim_params.conRAL = true;
 sim_params.GARKF = true;
@@ -80,8 +83,8 @@ for i = 1:length(lambdas)
     est_error = mean(vecnorm(garkf_est_track_mc - true_edge_track_mc, 2, 1), 3);
     est_cov = mean(arrayfun(@(k) trace(garkf_cov_track_mc(:,:,k)), 1:K_max), 3);
     
-    save(sprintf('results/est_error_garkf_lmd_%s.mat', names{i}), 'est_error');
-    save(sprintf('results/est_cov_garkf_lmd_%s.mat', names{i}), 'est_cov');
+    save(sprintf('results/est_error_garkf_lmd_%s.mat', names{i}), 'est_error'); % scalar mean tracking error
+    save(sprintf('results/est_cov_garkf_lmd_%s.mat', names{i}), 'est_cov'); % trace of covariance matrix
 end
 
 disp('Simulation done');
