@@ -10,16 +10,16 @@ t_array = linspace(0, t_max, K_max)';
 blind_time_start = sim_params.blind_start * dt;
 blind_time_end = sim_params.blind_end * dt;
 
-color_follower = [146, 208, 80] / 256.0;
-color_leader = [255, 184, 28] / 256.0;
-color_blind = [255, 50, 50] / 256.0;
+color_follower = [146, 208, 80] / 256.0; % green
+color_leader = [255, 184, 28] / 256.0; % orange
+color_blind = [255, 50, 50] / 256.0; % red failing leader
 
 figure('Position', [100, 100, 1000, 400]);
-y_max = max(max(TE_base), max(TE_blind)) * 5; 
+y_max = max(max(TE_base), max(TE_blind)) * 5; % calculate dynamic y-bounds
 y_min = max(1e-6, min(min(TE_base), min(TE_blind)) * 0.1); 
 
-subplot(1, 2, 1); hold on;
-fill([blind_time_start, blind_time_end, blind_time_end, blind_time_start], ...
+subplot(1, 2, 1); hold on; % tracking error
+fill([blind_time_start, blind_time_end, blind_time_end, blind_time_start], ... % failure window drawing
      [y_min, y_min, y_max, y_max], [0.9 0.9 0.9], 'EdgeColor', 'none', 'DisplayName', 'Leader 16 GPS Failure');
 plot(t_array, TE_base, 'Color', [0.6 0.8 0.2], 'LineWidth', 2, 'DisplayName', 'Baseline (Perfect)');
 plot(t_array, TE_blind, 'Color', [0.86 0.08 0.24], 'LineWidth', 2, 'DisplayName', 'Top-Right Leader Blindfolded');
@@ -32,8 +32,8 @@ legend('Location', 'northeast');
 grid on;
 box on;
 
-subplot(1, 2, 2); hold on;
-for i = 1:16
+subplot(1, 2, 2); hold on; % physical trajectory
+for i = 1:16 % continuous paths
     x = squeeze(traj_blind(1, i, :));
     y = squeeze(traj_blind(2, i, :));
     if i == sim_params.blind_node
@@ -51,13 +51,13 @@ for idx_stamp = 1:length(stamps)
     t = stamps(idx_stamp);
     nodes_xy = squeeze(traj_blind(:, :, t))'; 
     for i = 1:16
-        for j = i+1:16
+        for j = i+1:16 % get distance based on nominal grid
             if norm(P_nom(:,i) - P_nom(:,j)) == 1
                 plot([nodes_xy(i,1), nodes_xy(j,1)], [nodes_xy(i,2), nodes_xy(j,2)], 'k-', 'LineWidth', 1.5);
             end
         end
     end
-    for i = 1:16
+    for i = 1:16 % draw the nodes
         if i == sim_params.blind_node
             plot(nodes_xy(i, 1), nodes_xy(i, 2), '.', 'Color', color_blind, 'MarkerSize', 20);
         elseif ismember(i, [1, 4, 13])
@@ -66,7 +66,7 @@ for idx_stamp = 1:length(stamps)
             plot(nodes_xy(i, 1), nodes_xy(i, 2), '.', 'Color', color_follower, 'MarkerSize', 15);
         end
     end
-    center_x = mean(nodes_xy(:, 1));
+    center_x = mean(nodes_xy(:, 1)); % draw labels
     min_y = min(nodes_xy(:, 2));
     if time_labels(idx_stamp) == 28
         text(center_x, min_y - 1.5, sprintf('$t = %ds$ (GPS Lost)', time_labels(idx_stamp)), 'HorizontalAlignment', 'center', 'FontSize', 10, 'Interpreter', 'latex', 'Color', 'r');
