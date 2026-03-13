@@ -5,7 +5,7 @@ lambdas = {'1', '04', '02', '00'};
 lmd_vals = [1.0, 0.4, 0.2, 0.0];
 err_rkf = zeros(1, 4); err_garkf = zeros(1, 4);
 
-for i = 1:length(lambdas)
+for i = 1:length(lambdas) % load scalar est errors
     data = load(['results/est_error_rkf_lmd_', lambdas{i}, '.mat']);
     err_rkf(i) = mean(data.est_error);
     data = load(['results/est_error_garkf_lmd_', lambdas{i}, '.mat']);
@@ -16,11 +16,11 @@ dt = 0.01;
 t_max = 30;
 K_max = floor(t_max / dt);
 t = linspace(0, t_max, K_max);
-cov_lambdas = {'00', '02', '1'};
-cov_titles = {'\lambda = 0.0', '\lambda = 0.2', '\lambda = 1.0'};
-cov_ylims = {[1e-3, 1e6], [5e-3, 1e1], [1e-2, 1e1]};
+cov_lambdas = {'00', '02', '1'}; % only 3 for cleaner subplot
+cov_titles = {'\lambda = 0.0', '\lambda = 0.2', '\lambda = 1.0'}; % titles
+cov_ylims = {[1e-3, 1e6], [5e-3, 1e1], [1e-2, 1e1]}; % y lims
 
-figure('Position', [100, 400, 900, 300]); 
+figure('Position', [100, 400, 900, 300]); % plotting Lambdas over time rkf vs garkf
 for j = 1:length(cov_lambdas)
     lmd_str = cov_lambdas{j};
     load(['results/est_cov_rkf_lmd_', lmd_str, '.mat'], 'est_cov');
@@ -40,5 +40,5 @@ for j = 1:length(cov_lambdas)
     legend('Location', 'best');
     grid on;
 end
-tightfig;
+tightfig;% remove unnecessary whitespace
 saveas(gcf, 'results/est_cov_subplots.png');
