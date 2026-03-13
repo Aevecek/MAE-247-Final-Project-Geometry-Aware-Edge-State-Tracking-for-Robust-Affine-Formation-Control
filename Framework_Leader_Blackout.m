@@ -1,26 +1,31 @@
 classdef Framework_Leader_Blackout < Framework_FLT
+    %inherits Framework_FLT but adds targeted failure mechanism
     properties
         blind_start, blind_end, blind_node
     end
     methods
         function obj = Framework_Leader_Blackout(sim_params)
             obj@Framework_FLT(sim_params);
-            obj.blind_start = sim_params.blind_start;
-            obj.blind_end = sim_params.blind_end;
-            obj.blind_node = sim_params.blind_node; 
+            obj.blind_start = sim_params.blind_start; % start of blind window
+            obj.blind_end = sim_params.blind_end; % end of blind window
+            obj.blind_node = sim_params.blind_node;
         end
         function run(obj)
+            % deny Leader of global data
             for k = 1:obj.K_max
                 if k >= obj.blind_start && k <= obj.blind_end
                     obj.agents{obj.blind_node}.is_leader = 0; 
                 else
                     obj.agents{obj.blind_node}.is_leader = 1; 
                 end
+                % estimate global geometry
+                obj.est_Theta(k);
+                obj.CI(k); % CI
+                if obj.use_conRAL % Consensus
+                    obj.ConRAL(k);
+                end
                 
-                obj.est_Theta(k); obj.CI(k);
-                if obj.use_conRAL, obj.ConRAL(k); end
-                
-                for i = 1:obj.N
+                for i = 1:obj.N % Main agent loop
                     Zij = obj.config_track(:, i, k) - obj.config_track(:, :, k);
                     Z = obj.config_track(:, :, k);
                     noise_ij = squeeze(obj.obs_noise(k, i, :, :))';
@@ -28,7 +33,7 @@ classdef Framework_Leader_Blackout < Framework_FLT
                     sel_mat = repmat(obj.sense_mat(:, i, k)', obj.D, 1);
                     Yij = Yij .* sel_mat;
                     
-                    if obj.use_RAL
+                    if obj.use_RAL % route measurements through KF
                         Zij_est = obj.RAL(i, k, Yij);
                         if obj.use_GARKF, Zij_est = obj.GARKF(i, k, Zij_est); end
                     elseif obj.use_RKFIO
@@ -36,7 +41,7 @@ classdef Framework_Leader_Blackout < Framework_FLT
                     else
                         Zij_est = Yij;
                     end
-                    [obj.config_track(:, i, k + 1), obj.U_last(:, i)] = ...
+                    [obj.config_track(:, i, k + 1), obj.U_last(:, i)] = ... % update control state
                         obj.agents{i}.step(Z, obj.U_last, Zij_est, k);
                 end
             end
