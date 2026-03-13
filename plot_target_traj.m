@@ -1,11 +1,13 @@
 % plot_target_traj.m
 clear; clc; close all;
 
+% setup baseline hexagon sim
 dt = 0.01;
 t_max = 60;
 K_max = floor(t_max / dt);
 sim_params.dt = dt;
 
+% use 100% perfect sensing
 sim_params.t_max = t_max;
 sim_params.static = false;
 sim_params.shape = 'hexa';
@@ -16,17 +18,18 @@ fw = Framework(sim_params);
 ref_traj = fw.Z_target;
 B = fw.B_nom;
 [n, m] = size(B);
-edges = zeros(2, m);
+edges = zeros(2, m); % identify active edges to plot
 for i = 1:m
     idx = find(B(:, i)); edges(:, i) = idx;
 end
 
-color_follower = [146, 208, 80] / 256.0; 
-color_leader = [255, 184, 28] / 256.0;
+% UCSD paper specific colours used
+color_follower = [146, 208, 80] / 256.0; % Green
+color_leader = [255, 184, 28] / 256.0; % Orange
 figure('Position', [100, 100, 900, 300]);
 hold on;
 
-for i = 1:n
+for i = 1:n % plot cont path of the nodes
     x = squeeze(ref_traj(1, i, :)); 
     y = squeeze(ref_traj(2, i, :));
     if ismember(i, [1, 2, 3])
@@ -36,14 +39,16 @@ for i = 1:n
     end
 end
 
-stamps = [2, 1600, 2800, 4000, 6000]; time_labels = [0, 16, 28, 40, 60]; 
+stamps = [2, 1600, 2800, 4000, 6000]; time_labels = [0, 16, 28, 40, 60]; % plot overlayed snapshot configs  
 for idx_stamp = 1:length(stamps)
     t = stamps(idx_stamp); 
     nodes_xy = squeeze(ref_traj(:, :, t))'; 
+    % draw the edges
     for j = 1:m
         idx = edges(:, j); 
         plot(nodes_xy(idx, 1), nodes_xy(idx, 2), 'k-', 'LineWidth', 1);
     end
+    % Draw the nodes
     for i = 1:n
         if ismember(i, [4, 5, 7])
             plot(nodes_xy(i, 1), nodes_xy(i, 2), '.', 'Color', color_leader, 'MarkerSize', 20);
@@ -51,10 +56,12 @@ for idx_stamp = 1:length(stamps)
             plot(nodes_xy(i, 1), nodes_xy(i, 2), '.', 'Color', color_follower, 'MarkerSize', 20);
         end
     end
+    % add times of snapshots
     text(mean(nodes_xy(:, 1)), min(nodes_xy(:, 2)) - 0.8, sprintf('$t = %ds$', time_labels(idx_stamp)), ...
         'HorizontalAlignment', 'center', 'FontSize', 12, 'Interpreter', 'latex');
 end
 
+% axes formatting
 xlabel('$x[m]$', 'Interpreter', 'latex', 'FontSize', 14); 
 ylabel('$y[m]$', 'Interpreter', 'latex', 'FontSize', 14);
 xlim([-5, 48]);
